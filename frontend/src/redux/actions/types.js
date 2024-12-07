@@ -1,0 +1,27 @@
+// ITEM ACTION TYPE
+export const CREATE_ITEM = 'CREATE_ITEM';
+export const RETRIEVE_ITEM = 'RETRIEVE_ITEM';
+export const RETRIEVE_ALL_ITEM = 'RETRIEVE_ALL_ITEM';
+export const GET_ITEM = 'GET_ITEM';
+export const UPDATE_ITEM = 'UPDATE_ITEM';
+export const DELETE_ITEM  = 'DELETE_ITEM';
+
+// AUTHENTICATION ACTION TYPE
+export const __SIGNIN = '__SIGNIN';
+
+// ORDER ACTION TYPE
+export const RETRIEVE_ORDER  = 'RETRIEVE_ORDER';
+export const ORDER_STATUS  = 'ORDER_STATUS';
+
+//IN STORE BILLING
+export const CREATE_BILL = "CREATE_BILL";
+export const RETRIEVE_INVOICES = 'RETRIEVE_INVOICES';
+export const GET_INVOICE = 'GET_INVOICE';
+
+// BANNER ACTION TYPE
+export const BANNER_ADD = 'BANNER_ADD';
+export const BANNER_DELETE  = 'BANNER_DELETE';
+export const BANNER_LIST  = 'BANNER_LIST';
+
+export const RETRIEVE_TAG = 'RETRIEVE_TAG';
+

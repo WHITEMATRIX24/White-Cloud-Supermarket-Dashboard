@@ -1,0 +1,205 @@
+@import "~bootstrap/scss/bootstrap";
+
+$mainColor: #302f7f;
+$secondaryColor: #49c1c0;
+$thirdColor: #908ec6;
+$blackColor: #000;
+$grayColor: #D9D9D9;
+$whiteColor: #fff;
+$cardHeight: 75vh;
+
+// $orageColor: #FC8370;
+// $yellowColor: #FFCB3F;
+// $lightGreenColor:#B3BA85;
+// $darkGreenColor:#888E57;
+
+.main-section {
+    background-color: $mainColor;
+    height: 100vh;
+}
+.drop-down{
+    width: 100%;
+    text-align: left;
+    position: relative;
+    background-color: #fff;
+    color: #000;
+}
+.dropdown-toggle::after {
+    display: inline-block;
+    margin-left: 0.255em;
+    position: absolute;
+    vertical-align: 0.255em;
+    border-top: 0.3em solid;
+    border-right: 0.3em solid transparent;
+    border-bottom: 0;
+    border-left: 0.3em solid transparent;
+    top: 50%;
+    right: 20px;
+}
+button#input-group-dropdown-1 {
+    width: 100%;
+    text-align: left;
+    position: relative;
+    background-color: #fff;
+    color: #000;
+    border: none;
+}
+.dropdown-menu.show {
+    width: 100%;
+}
+.main-header {
+    padding-top: 20px;
+    padding-bottom:0;
+}
+
+.main-header .nav-link {
+    background: $grayColor;
+    color: $blackColor;
+    padding: 10px 15px !important; 
+    font-size: 15px;
+    font-weight: 500;
+    margin: 0px 10px;
+}
+
+.main-header .navbar-nav .nav-link.active{
+    background-color:$secondaryColor !important;
+    color: $whiteColor;
+}
+.dashboard-card {
+    height: $cardHeight;
+    background-color: $secondaryColor;
+    overflow: auto;
+    padding: 30px;
+}
+
+.card-body {
+    padding: 0px !important;
+}
+
+.dashboard-card .orders-list .order {
+    background: $whiteColor;
+    // margin: 10px 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: $thirdColor 10px 10px;
+    cursor: pointer;
+}
+
+.dashboard-card .orders-list .order ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.inbiling_main{
+    background-color:$secondaryColor;
+    padding:30px;
+    height: $cardHeight;
+    overflow: auto;
+}
+
+.inbiling_main .form-group .form-control, .stocks-list .form-group .form-control{
+    background-color:$whiteColor;
+    color:$blackColor;
+    font-weight:700;
+    font-size:13px;
+    border:none;
+    padding:10px 20px;
+    border-radius:20px;
+}
+
+.inbiling_main .form-group .form-control::placeholder, .stocks-list .form-group .form-control::placeholder {
+    color: $blackColor;
+}
+
+.inbiling_inr{
+    background-color:$whiteColor;
+    height:250px;
+    // overflow: auto;
+}
+
+.confirm_bt{
+    background-color:$thirdColor;
+    color:$whiteColor;
+    font-size:20px;
+    font-weight:700;
+    padding:10px 20px;
+    text-align:center;
+}
+.confirm_bt:hover{
+    background-color:$thirdColor;
+    color:$whiteColor;
+}
+
+.stocks-list .item {
+    position: relative;
+    width: 100%;
+    background-color: $whiteColor;
+    margin: 8px 0px;
+    border-radius: 10px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.stocks-list .item img{
+    width:100%;
+    height:125px;
+    border-radius:10px;
+    transition: all 0.5s ease-in-out;
+}
+
+.stocks-list .item h2{
+    font-size:16px;
+    color:$thirdColor;
+    font-weight:600;
+    margin-bottom:0px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.stocks-list .item p{
+    font-size: 15px;
+    font-weight:600;
+    color:$blackColor;
+    margin:0;
+}
+
+.loader{
+    margin: 0 auto;
+}
+
+.main-section ::-webkit-scrollbar {
+    width: 10px;
+}
+
+.main-section ::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+    border-radius:10px;
+}
+   
+.main-section ::-webkit-scrollbar-thumb {
+    background: $thirdColor; 
+    border-radius:10px;
+}
+  
+.main-section ::-webkit-scrollbar-thumb:hover {
+    background: #555; 
+}
+
+.product_img{
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    margin-bottom:15px;
+}
+
+.item:hover .product_img img{
+    transform: scale(1.2);
+}
+
+button.btn-cutsom {
+    background-color: $thirdColor !important;
+    color: $whiteColor !important;
+    border-color: $whiteColor !important;
+}
