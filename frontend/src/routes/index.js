@@ -14,6 +14,8 @@ import PreviousOrders from "../pages/Previous-orders";
 import Invoice from "../pages/Invoice";
 import ItemAdd from "../pages/Item/Add_item";
 import AddBanner from "../pages/Banner/AddBanner";
+import AddAgent from "../pages/Agent/AddAgent";
+import AgentDetails from "../pages/Agent/AgentDetails";
 
 const router = createBrowserRouter([
   {
@@ -58,6 +60,14 @@ const router = createBrowserRouter([
       {
         path: "/profile",
         element: <Profile />
+      },
+      {
+        path: "/addagent",
+        element: <AddAgent />
+      },
+      {
+        path: "/agentdetails",
+        element: <AgentDetails />
       }
 
     ]

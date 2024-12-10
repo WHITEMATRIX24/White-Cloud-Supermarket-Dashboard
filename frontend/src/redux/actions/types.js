@@ -25,3 +25,7 @@ export const BANNER_LIST  = 'BANNER_LIST';
 
 export const RETRIEVE_TAG = 'RETRIEVE_TAG';
 
+// AGENT ACTION TYPES
+export const ADD_AGENT='ADD_AGENT';
+export const GET_AGENTDETAILS='GET_AGENTDETAILS'
+

@@ -52,7 +52,7 @@ export const get_item = (id) => {
                     payload: res.data
                 });
                 return Promise.resolve(res.data);
-            
+
         }
     } catch (error) {
         console.log('GET ITEM CATCH BLOCK ERROR : ', error);

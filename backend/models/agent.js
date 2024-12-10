@@ -17,11 +17,11 @@ const agentSchema=new mongoose.Schema({
     },
     order_Details:[{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "invoice",
+        ref: "Invoice",
     }],
     accountsCreated:[{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "user", 
+        ref: "User", 
     }]
 });
 const agents=mongoose.model('agents',agentSchema);

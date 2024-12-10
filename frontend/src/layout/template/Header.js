@@ -59,6 +59,10 @@ const Header = () => {
                         <NavLink className={'nav-link'} to="in-store-billing">In Store Billing</NavLink>
 
                         <NavLink className={'nav-link'} to="orders">Orders</NavLink>
+
+                        <NavLink className={'nav-link'} to="addagent">Add Agent</NavLink>
+
+                        <NavLink className={'nav-link'} to="agentdetails"> Agent details</NavLink>
                        
                     </Nav>
                     <Nav>
