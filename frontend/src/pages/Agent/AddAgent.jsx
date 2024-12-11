@@ -30,28 +30,28 @@ function AddAgent() {
     };
 
 
-    console.log("Agents",agent);
-    
+    console.log("Agents", agent);
 
-    const handleAddAgent = async() => {
-       try{
-        const payload = {
-            agentName: agent.agentname, // Map `agentname` to `agentName`
-            agent_id: agent.agentid,   // Map `agentid` to `agent_id`
-          };
-        const result =await axios.post('http://localhost:4001/addAgent',payload);
-        console.log(result);
-        
-        if(result.status===201){
-          alert("Agent Added SuccessFully");
-          setAgent({agentname:"",agentid:""});
-        }else{
-            console.log("Error at Adding Agent");
+
+    const handleAddAgent = async () => {
+        try {
+            const payload = {
+                agentName: agent.agentname, // Map `agentname` to `agentName`
+                agent_id: agent.agentid,   // Map `agentid` to `agent_id`
+            };
+            const result = await axios.post(`${process.env.REACT_APP_API_URL}/addAgent`, payload);
+            console.log(result);
+
+            if (result.status === 201) {
+                alert("Agent Added SuccessFully");
+                setAgent({ agentname: "", agentid: "" });
+            } else {
+                console.log("Error at Adding Agent");
+            }
+        } catch (err) {
+            console.log("Error at Catch in ADD AGENT::::", err);
+
         }
-       }catch(err){
-     console.log("Error at Catch in ADD AGENT::::",err);
-     
-       }
     };
 
 

@@ -46,58 +46,58 @@ app.use(express.json());
 
 
 
-app.get("/", (req, res) => {
-  app.use(express.static(path.resolve(__dirname, "frontend", "build")));
-  res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
-  //res.send("Express app is running")
-})
-app.get("/signin", (req, res) => {
-  app.use(express.static(path.resolve(__dirname, "frontend", "build")));
-  res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
-  //res.send("Express app is running")
-})
-app.get("/profile", (req, res) => {
-  app.use(express.static(path.resolve(__dirname, "frontend", "build")));
-  res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
-  //res.send("Express app is running")
-})
-app.get("/banner", (req, res) => {
-  app.use(express.static(path.resolve(__dirname, "frontend", "build")));
-  res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
-  //res.send("Express app is running")
-})
-app.get("/banner/add", (req, res) => {
-  app.use(express.static(path.resolve(__dirname, "frontend", "build")));
-  res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
-  //res.send("Express app is running")
-})
-app.get("/previous-orders", (req, res) => {
-  app.use(express.static(path.resolve(__dirname, "frontend", "build")));
-  res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
-  //res.send("Express app is running")
-})
-app.get("/in-store-billing", (req, res) => {
-  app.use(express.static(path.resolve(__dirname, "frontend", "build")));
-  res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
-  //res.send("Express app is running")
-})
-app.get("/orders", (req, res) => {
-  app.use(express.static(path.resolve(__dirname, "frontend", "build")));
-  res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
-  //res.send("Express app is running")
-})
-app.get("/add-item", (req, res) => {
-  app.use(express.static(path.resolve(__dirname, "frontend", "build")));
-  res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
-  //res.send("Express app is running")
-})
-app.get("/add-item/:id", (req, res) => {
-  app.use(express.static(path.resolve(__dirname, "frontend", "build")));
-  res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
-  //res.send("Express app is running")
-})
+// app.get("/", (req, res) => {
+//   app.use(express.static(path.resolve(__dirname, "frontend", "build")));
+//   // res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
+//   //res.send("Express app is running")
+// })
+// app.get("/signin", (req, res) => {
+//   app.use(express.static(path.resolve(__dirname, "frontend", "build")));
+//   res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
+//   //res.send("Express app is running")
+// })
+// app.get("/profile", (req, res) => {
+//   app.use(express.static(path.resolve(__dirname, "frontend", "build")));
+//   res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
+//   //res.send("Express app is running")
+// })
+// app.get("/banner", (req, res) => {
+//   app.use(express.static(path.resolve(__dirname, "frontend", "build")));
+//   res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
+//   //res.send("Express app is running")
+// })
+// app.get("/banner/add", (req, res) => {
+//   app.use(express.static(path.resolve(__dirname, "frontend", "build")));
+//   res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
+//   //res.send("Express app is running")
+// })
+// app.get("/previous-orders", (req, res) => {
+//   app.use(express.static(path.resolve(__dirname, "frontend", "build")));
+//   res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
+//   //res.send("Express app is running")
+// })
+// app.get("/in-store-billing", (req, res) => {
+//   app.use(express.static(path.resolve(__dirname, "frontend", "build")));
+//   res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
+//   //res.send("Express app is running")
+// })
+// app.get("/orders", (req, res) => {
+//   app.use(express.static(path.resolve(__dirname, "frontend", "build")));
+//   res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
+//   //res.send("Express app is running")
+// })
+// app.get("/add-item", (req, res) => {
+//   app.use(express.static(path.resolve(__dirname, "frontend", "build")));
+//   res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
+//   //res.send("Express app is running")
+// })
+// app.get("/add-item/:id", (req, res) => {
+//   app.use(express.static(path.resolve(__dirname, "frontend", "build")));
+//   res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
+//   //res.send("Express app is running")
+// })
 
-app.get('/items', async (req, res) => {
+app.get('/api/items', async (req, res) => {
   try {
     console.log(req.query);
     //const page = parseInt(req.query.page) || 9; // Get the current page from the query parameters (default to 1 if not provided)
@@ -133,7 +133,7 @@ app.get('/items', async (req, res) => {
   }
 });
 
-app.get('/allItems', async (req, res) => {
+app.get('/api/allItems', async (req, res) => {
   try {
     const items = await Item.find({}).sort({ _id: 1 });
 
@@ -151,7 +151,7 @@ app.get('/allItems', async (req, res) => {
 });
 
 
-app.post('/itemDelete/:id', async (req, res) => {
+app.post('/api/itemDelete/:id', async (req, res) => {
   try {
     const id = req.params.id;
     const item = await Item.findByIdAndDelete(id);
@@ -175,7 +175,7 @@ app.post('/itemDelete/:id', async (req, res) => {
     });
   }
 });
-app.get('/itemEdit/:id', async (req, res) => {
+app.get('/api/itemEdit/:id', async (req, res) => {
   try {
     const id = req.params.id;
     const item = await Item.findById(id);
@@ -199,7 +199,7 @@ app.get('/itemEdit/:id', async (req, res) => {
   }
 });
 
-app.post('/itemUpdate/:id', upload.fields([{ name: 'item_image', maxCount: 1 }, { name: 'item_hsb', maxCount: 1 }]), async (req, res) => {
+app.post('/api/itemUpdate/:id', upload.fields([{ name: 'item_image', maxCount: 1 }, { name: 'item_hsb', maxCount: 1 }]), async (req, res) => {
   try {
     const id = req.params.id;
     const newdata = req.body;
@@ -252,7 +252,7 @@ app.post('/itemUpdate/:id', upload.fields([{ name: 'item_image', maxCount: 1 }, 
 
 
 
-app.post('/itemStore', upload.fields([{ name: 'item_image', maxCount: 1 }, { name: 'item_hsb', maxCount: 1 }]), async (req, res) => {
+app.post('/api/itemStore', upload.fields([{ name: 'item_image', maxCount: 1 }, { name: 'item_hsb', maxCount: 1 }]), async (req, res) => {
   const itemData = req.body;
   const { item_name, mesuring_qntty, item_mrp, discount, item_catogory, item_tags, item_hsb, item_image, instock_outstock_indication, stock_quantity } = itemData;
   if (!item_name || !mesuring_qntty || !item_mrp || !discount || !item_catogory || !item_tags || !instock_outstock_indication || !stock_quantity) {
@@ -293,7 +293,7 @@ app.post('/itemStore', upload.fields([{ name: 'item_image', maxCount: 1 }, { nam
     });
   }
 });
-app.get('/getBanner', async (req, res) => {
+app.get('/api/getBanner', async (req, res) => {
   try {
     const banner = await Banner.find({});
     res.json({
@@ -309,7 +309,7 @@ app.get('/getBanner', async (req, res) => {
   }
 });
 
-app.post('/deletehsbimg/:id', async (req, res) => {
+app.post('/api/deletehsbimg/:id', async (req, res) => {
   try {
     const id = req.params.id;
     console.log(`ID : ${id}`);
@@ -335,7 +335,7 @@ app.post('/deletehsbimg/:id', async (req, res) => {
   }
 });
 
-app.post('/add_banner', upload.fields([{ name: 'banner_img', maxCount: 1 }]), async (req, res) => {
+app.post('/api/add_banner', upload.fields([{ name: 'banner_img', maxCount: 1 }]), async (req, res) => {
   const bannerData = req.body;
   const bannerHsb = req.files['banner_img'] ? req.files['banner_img'][0].buffer.toString('base64') : null;
   try {
@@ -360,7 +360,7 @@ app.post('/add_banner', upload.fields([{ name: 'banner_img', maxCount: 1 }]), as
   }
 });
 
-app.get('/tags', async (req, res) => {
+app.get('/api/tags', async (req, res) => {
   try {
     const tags = await Tag.find({});
 
@@ -378,7 +378,7 @@ app.get('/tags', async (req, res) => {
 });
 
 
-app.post('/addTag', async (req, res) => {
+app.post('/api/addTag', async (req, res) => {
   try {
     const tags = req.body.tags;
 
@@ -404,7 +404,7 @@ app.post('/addTag', async (req, res) => {
   }
 });
 
-app.post('/uploadInvoice', upload.single('file'), async (req, res) => {
+app.post('/api/uploadInvoice', upload.single('file'), async (req, res) => {
   console.log(req.file); // Add this line
   try {
     const newInvoice = new PDF();
@@ -419,7 +419,7 @@ app.post('/uploadInvoice', upload.single('file'), async (req, res) => {
   }
 });
 
-app.post('/orderStore', upload.none(), async (req, res) => {
+app.post('/api/orderStore', upload.none(), async (req, res) => {
   try {
     const { cx_phone_number, cx_name, price, payment_mode, item_details } = req.body;
 
@@ -453,7 +453,7 @@ app.post('/orderStore', upload.none(), async (req, res) => {
 
 
 
-app.get('/order', async (req, res) => {
+app.get('/api/order', async (req, res) => {
   try {
     const invoices = await Invoice.find({});
 
@@ -490,7 +490,7 @@ app.get('/order', async (req, res) => {
   }
 });*/
 
-app.post('/orderStatus', upload.none(), async (req, res) => {
+app.post('/api/orderStatus', upload.none(), async (req, res) => {
   const { orderId, order_status } = req.body;
   try {
     const invoice = await Invoice.findOne({ order_id: orderId });
@@ -522,7 +522,7 @@ app.post('/orderStatus', upload.none(), async (req, res) => {
 });
 
 
-app.post('/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
   try {
     const { phone_number, password } = req.body;
     console.log("BODY", req.body);
@@ -544,7 +544,7 @@ app.post('/login', async (req, res) => {
 
 // <<<<<<::::::Add Agent::::::>>>>>>
 
-app.post('/addAgent', async (req, res) => {
+app.post('/api/addAgent', async (req, res) => {
   const { agentName, agent_id } = req.body;
   console.log(req.body);
 
@@ -572,7 +572,7 @@ app.post('/addAgent', async (req, res) => {
 
 // <<<<::::Displaying All Agent Details By Using Populate()::::>>>>
 
-app.get('/getAllAgentDetails', async (req, res) => {
+app.get('/api/getAllAgentDetails', async (req, res) => {
   try {
     const agentDetails = await Agent.find().populate('accountsCreated')
     if (!agentDetails) {
