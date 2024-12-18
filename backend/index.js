@@ -1,32 +1,38 @@
-const dotenv = require('dotenv');
+const dotenv = require("dotenv");
 const port = 4001;
-const express = require('express');
-const multer = require('multer');
-const cors = require('cors');
-const path = require('path');
-const mongoose = require('mongoose');
-const Item = require('./models/item');
-const Invoice = require('./models/invoice');
-const Banner = require('./models/banner');
-const Admin = require('./models/admin');
-const User = require('./models/user');
-const Tag = require('./models/tag');
-const PDF = require('./models/invoicePDF');
-const Agent = require('./models/agent');
-const fs = require('fs');
+const express = require("express");
+const multer = require("multer");
+const cors = require("cors");
+const path = require("path");
+const mongoose = require("mongoose");
+const Item = require("./models/item");
+const Invoice = require("./models/invoice");
+const Banner = require("./models/banner");
+const Admin = require("./models/admin");
+const User = require("./models/user");
+const Tag = require("./models/tag");
+const PDF = require("./models/invoicePDF");
+const Agent = require("./models/agent");
+const fs = require("fs");
+const {
+  uploadTos3Bucket,
+  deleteFromS3bucket,
+} = require("./utils/s3functionProvider");
+const crypto = require("crypto");
+const { promisify } = require("util");
 
 dotenv.config();
 
 // <<<<::::Connection string From .env file:::>>>> //
 const connectString = process.env.MONGODB_URL;
-mongoose.connect(connectString)
+mongoose
+  .connect(connectString)
   .then(() => {
     console.log("MongoDB Connection is Successful");
   })
   .catch((err) => {
-    console.log('Connection Failed', err);
+    console.log("Connection Failed", err);
   });
-
 
 const app = express();
 
@@ -35,6 +41,9 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 app.use(express.json());
 
+// Generate a random file name
+const randomBytes = promisify(crypto.randomBytes);
+
 // //mongoose.connect("mongodb+srv://ebinjomonkottakal:fwscJgpQGiEp8amb@cluster0.iekhyww.mongodb.net/ecommerce").then(()=>{
 // console.log("Connected to MongoDB");
 // //mongoose.connect("mongodb+srv://johnathikalam:bKKjhjvcxEZ5H60q@cluster0.my87tnj.mongodb.net/store_billing").then(()=>{
@@ -42,9 +51,6 @@ app.use(express.json());
 // }).catch((error)=>{
 //   console.log("Mongoose Error : "+error);
 // })
-
-
-
 
 // app.get("/", (req, res) => {
 //   app.use(express.static(path.resolve(__dirname, "frontend", "build")));
@@ -97,7 +103,7 @@ app.use(express.json());
 //   //res.send("Express app is running")
 // })
 
-app.get('/api/items', async (req, res) => {
+app.get("/api/items", async (req, res) => {
   try {
     console.log(req.query);
     //const page = parseInt(req.query.page) || 9; // Get the current page from the query parameters (default to 1 if not provided)
@@ -122,194 +128,249 @@ app.get('/api/items', async (req, res) => {
 
     res.json({
       success: true,
-      data: items
+      data: items,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while retrieving the items'
+      message: "An error occurred while retrieving the items",
     });
   }
 });
 
-app.get('/api/allItems', async (req, res) => {
+app.get("/api/allItems", async (req, res) => {
   try {
     const items = await Item.find({}).sort({ _id: 1 });
 
     res.json({
       success: true,
-      data: items
+      data: items,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while retrieving the items'
+      message: "An error occurred while retrieving the items",
     });
   }
 });
 
-
-app.post('/api/itemDelete/:id', async (req, res) => {
+app.post("/api/itemDelete/:id", async (req, res) => {
   try {
     const id = req.params.id;
+
+    // delete from s3 bucket
+    const existsData = await Item.findById(id);
+    deleteFromS3bucket(existsData.item_image);
+
     const item = await Item.findByIdAndDelete(id);
 
     if (!item) {
       return res.status(404).json({
         success: false,
-        message: 'Item not found'
+        message: "Item not found",
       });
     }
 
     res.json({
       success: true,
-      message: 'Item deleted successfully'
+      message: "Item deleted successfully",
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while deleting the item'
+      message: "An error occurred while deleting the item",
     });
   }
 });
-app.get('/api/itemEdit/:id', async (req, res) => {
+app.get("/api/itemEdit/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const item = await Item.findById(id);
     if (!item) {
       return res.status(404).json({
         success: false,
-        message: 'Item not found'
+        message: "Item not found",
       });
     }
 
     res.json({
       success: true,
-      data: item
+      data: item,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while retrieving the item'
+      message: "An error occurred while retrieving the item",
     });
   }
 });
 
-app.post('/api/itemUpdate/:id', upload.fields([{ name: 'item_image', maxCount: 1 }, { name: 'item_hsb', maxCount: 1 }]), async (req, res) => {
-  try {
-    const id = req.params.id;
-    const newdata = req.body;
-    const categoryArray = newdata.item_catogory.split('-').map(category => category.trim());
-    const tagArray = newdata.item_tags.split('-').map(tag => tag.trim());
-    const newData = {
-      ...newdata,
-      item_catogory: categoryArray,
-      item_tags: tagArray,
-      updated_at: Date.now()
-    };
+app.post(
+  "/api/itemUpdate/:id",
+  upload.fields([
+    { name: "item_image", maxCount: 1 },
+    { name: "item_hsb", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const id = req.params.id;
+      const newdata = req.body;
+      const categoryArray = newdata.item_catogory
+        .split("-")
+        .map((category) => category.trim());
+      const tagArray = newdata.item_tags.split("-").map((tag) => tag.trim());
+      const newData = {
+        ...newdata,
+        item_catogory: categoryArray,
+        item_tags: tagArray,
+        updated_at: Date.now(),
+      };
 
-    // Check if item_image exists in the request
-    if (req.files && req.files['item_image']) {
-      newData.item_image = req.files['item_image'] ? req.files['item_image'][0].buffer.toString('base64') : null;
-    } else {
-      delete newData.item_image; // Remove item_image field if not present
-    }
+      const existingData = await Item.findById(id);
+      // Check if item_image exists in the request
+      if (req.files && req.files["item_image"]) {
+        await deleteFromS3bucket(existingData.item_image);
+        const imageName = await uploadTos3Bucket(
+          req.files["item_image"][0],
+          newData.item_name ? newData.item_name : existingData.item_name
+        );
+        newData.item_image = imageName;
+        newData.item_hsb = imageName;
+      } else {
+        delete newData.item_image; // Remove item_image field if not present
+      }
 
-    // Check if item_hsb exists in the request
-    if (req.files && req.files['item_hsb']) {
-      newData.item_hsb = req.files['item_hsb'] ? req.files['item_hsb'][0].buffer.toString('base64') : null;
-    } else {
-      delete newData.item_hsb; // Remove item_hsb field if not present
-    }
+      // Check if item_hsb exists in the request
+      // if (req.files && req.files["item_hsb"]) {
+      //   newData.item_hsb = req.files["item_hsb"]
+      //     ? req.files["item_hsb"][0].buffer.toString("base64")
+      //     : null;
+      // } else {
+      //   delete newData.item_hsb; // Remove item_hsb field if not present
+      // }
 
-    console.log(`ID : ${id}`);
-    console.log(req.body);
-    const item = await Item.findByIdAndUpdate(id, newData, { new: true });
+      console.log(`ID : ${id}`);
+      console.log(req.body);
+      const item = await Item.findByIdAndUpdate(id, newData, { new: true });
 
-    if (!item) {
-      return res.status(404).json({
+      if (!item) {
+        return res.status(404).json({
+          success: false,
+          message: "Item not found",
+        });
+      }
+
+      res.json({
+        success: true,
+        data: item,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({
         success: false,
-        message: 'Item not found'
+        message: "An error occurred while updating the item",
       });
     }
-
-    res.json({
-      success: true,
-      data: item
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      success: false,
-      message: 'An error occurred while updating the item'
-    });
   }
-});
+);
 
+app.post(
+  "/api/itemStore",
+  upload.fields([
+    { name: "item_image", maxCount: 1 },
+    { name: "item_hsb", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    const itemData = req.body;
+    const {
+      item_name,
+      mesuring_qntty,
+      item_mrp,
+      discount,
+      item_catogory,
+      item_tags,
+      // item_hsb,
+      // item_image,
+      instock_outstock_indication,
+      stock_quantity,
+    } = itemData;
+    if (
+      !item_name ||
+      !mesuring_qntty ||
+      !item_mrp ||
+      !discount ||
+      !item_catogory ||
+      !item_tags ||
+      !instock_outstock_indication ||
+      !stock_quantity
+    ) {
+      return res
+        .status(400)
+        .send({ success: false, error: "Please fill in all required fields." });
+    }
+    const { item_image: itemImage, item_hsb: itemHsb } = req.files;
 
+    // Split the item_tags string into an array of tags
+    const categoryArray = itemData.item_catogory
+      .split("-")
+      .map((category) => category.trim());
+    const tagArray = itemData.item_tags.split("-").map((tag) => tag.trim());
 
-app.post('/api/itemStore', upload.fields([{ name: 'item_image', maxCount: 1 }, { name: 'item_hsb', maxCount: 1 }]), async (req, res) => {
-  const itemData = req.body;
-  const { item_name, mesuring_qntty, item_mrp, discount, item_catogory, item_tags, item_hsb, item_image, instock_outstock_indication, stock_quantity } = itemData;
-  if (!item_name || !mesuring_qntty || !item_mrp || !discount || !item_catogory || !item_tags || !instock_outstock_indication || !stock_quantity) {
-    return res.status(400).send({ success: false, error: "Please fill in all required fields." });
+    if (!itemImage || !itemHsb) {
+      return res
+        .status(400)
+        .send({ success: false, error: "Please fill in all required fields." });
+    }
+    try {
+      const imageUrl = await uploadTos3Bucket(itemImage[0], item_name);
+      console.log("item Url", imageUrl);
+
+      const item = new Item({
+        ...itemData,
+        item_image: imageUrl,
+        item_hsb: imageUrl,
+        item_catogory: categoryArray,
+        item_tags: tagArray,
+      });
+      console.log(`Item: ${item}`);
+
+      await item.save();
+
+      res.json({
+        success: true,
+        message: "Item created successfully",
+        item: item,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({
+        success: false,
+        message: "An error occurred while creating the item",
+      });
+    }
   }
-  const itemImage = req.files['item_image'] ? req.files['item_image'][0].buffer.toString('base64') : null;
-  const itemHsb = req.files['item_hsb'] ? req.files['item_hsb'][0].buffer.toString('base64') : null;
-
-  // Split the item_tags string into an array of tags
-  const categoryArray = itemData.item_catogory.split('-').map(category => category.trim());
-  const tagArray = itemData.item_tags.split('-').map(tag => tag.trim());
-
-  if (!itemImage || !itemHsb) {
-    return res.status(400).send({ success: false, error: "Please fill in all required fields." });
-  }
-  try {
-    const item = new Item({
-      ...itemData,
-      item_image: itemImage,
-      item_hsb: itemHsb,
-      item_catogory: categoryArray,
-      item_tags: tagArray,
-    });
-    console.log(`Item: ${item}`);
-
-    await item.save();
-
-    res.json({
-      success: true,
-      message: 'Item created successfully',
-      item: item,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      success: false,
-      message: 'An error occurred while creating the item',
-    });
-  }
-});
-app.get('/api/getBanner', async (req, res) => {
+);
+app.get("/api/getBanner", async (req, res) => {
   try {
     const banner = await Banner.find({});
     res.json({
       success: true,
-      banner: banner
+      banner: banner,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while retrieving the items'
+      message: "An error occurred while retrieving the items",
     });
   }
 });
 
-app.post('/api/deletehsbimg/:id', async (req, res) => {
+app.post("/api/deletehsbimg/:id", async (req, res) => {
   try {
     const id = req.params.id;
     console.log(`ID : ${id}`);
@@ -318,93 +379,106 @@ app.post('/api/deletehsbimg/:id', async (req, res) => {
     if (!item) {
       return res.status(404).json({
         success: false,
-        message: 'Item not found'
+        message: "Item not found",
       });
     }
 
     res.json({
       success: true,
-      message: 'Item deleted successfully'
+      message: "Item deleted successfully",
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while deleting the item'
+      message: "An error occurred while deleting the item",
     });
   }
 });
 
-app.post('/api/add_banner', upload.fields([{ name: 'banner_img', maxCount: 1 }]), async (req, res) => {
-  const bannerData = req.body;
-  const bannerHsb = req.files['banner_img'] ? req.files['banner_img'][0].buffer.toString('base64') : null;
-  try {
-    const banner = new Banner({
-      ...bannerData,
-      banner_img: bannerHsb
-    });
+app.post(
+  "/api/add_banner",
+  upload.fields([{ name: "banner_img", maxCount: 1 }]),
+  async (req, res) => {
+    const bannerData = req.body;
 
-    await banner.save();
+    // Generate a unique name for the image
+    const rawBytes = await randomBytes(16);
+    const bannerName =
+      rawBytes.toString("hex") +
+      path.extname(req.files["banner_img"][0].originalname);
 
-    res.json({
-      success: true,
-      message: 'Item created successfully',
-      item: bannerData
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      success: false,
-      message: 'An error occurred while creating the item'
-    });
+    try {
+      const bannerUrl = await uploadTos3Bucket(
+        req.files["banner_img"][0],
+        bannerName
+      );
+      const banner = new Banner({
+        ...bannerData,
+        banner_img: bannerUrl,
+      });
+
+      await banner.save();
+
+      res.json({
+        success: true,
+        message: "Item created successfully",
+        item: bannerData,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({
+        success: false,
+        message: "An error occurred while creating the item",
+      });
+    }
   }
-});
+);
 
-app.get('/api/tags', async (req, res) => {
+app.get("/api/tags", async (req, res) => {
   try {
     const tags = await Tag.find({});
 
     res.json({
       success: true,
-      data: tags
+      data: tags,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while retrieving the tags'
+      message: "An error occurred while retrieving the tags",
     });
   }
 });
 
-
-app.post('/api/addTag', async (req, res) => {
+app.post("/api/addTag", async (req, res) => {
   try {
     const tags = req.body.tags;
 
     if (!tags) {
       return res.status(400).json({
         success: false,
-        message: 'Tag is required'
+        message: "Tag is required",
       });
     }
     const newTag = new Tag({ tags: tags });
     await newTag.save();
     res.json({
       success: true,
-      message: 'Tag created successfully',
-      tag: newTag
+      message: "Tag created successfully",
+      tag: newTag,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while creating the tag'
+      message: "An error occurred while creating the tag",
     });
   }
 });
 
-app.post('/api/uploadInvoice', upload.single('file'), async (req, res) => {
+app.post("/api/uploadInvoice", upload.single("file"), async (req, res) => {
   console.log(req.file); // Add this line
   try {
     const newInvoice = new PDF();
@@ -413,19 +487,28 @@ app.post('/api/uploadInvoice', upload.single('file'), async (req, res) => {
 
     await newInvoice.save();
 
-    res.status(200).send({ message: 'File uploaded and saved to database.' });
+    res.status(200).send({ message: "File uploaded and saved to database." });
   } catch (err) {
     res.status(500).send({ error: err.message });
   }
 });
 
-app.post('/api/orderStore', upload.none(), async (req, res) => {
+app.post("/api/orderStore", upload.none(), async (req, res) => {
   try {
-    const { cx_phone_number, cx_name, price, payment_mode, item_details } = req.body;
+    const { cx_phone_number, cx_name, price, payment_mode, item_details } =
+      req.body;
 
     // Check if required fields are empty
-    if (!cx_phone_number || !cx_name || !price || !payment_mode || !item_details) {
-      return res.status(400).send({ success: false, error: "Please fill in all required fields." });
+    if (
+      !cx_phone_number ||
+      !cx_name ||
+      !price ||
+      !payment_mode ||
+      !item_details
+    ) {
+      return res
+        .status(400)
+        .send({ success: false, error: "Please fill in all required fields." });
     }
 
     const oba = price;
@@ -451,21 +534,19 @@ app.post('/api/orderStore', upload.none(), async (req, res) => {
   }
 });
 
-
-
-app.get('/api/order', async (req, res) => {
+app.get("/api/order", async (req, res) => {
   try {
     const invoices = await Invoice.find({});
 
     res.json({
       success: true,
-      data: invoices
+      data: invoices,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while retrieving the items'
+      message: "An error occurred while retrieving the items",
     });
   }
 });
@@ -490,12 +571,12 @@ app.get('/api/order', async (req, res) => {
   }
 });*/
 
-app.post('/api/orderStatus', upload.none(), async (req, res) => {
+app.post("/api/orderStatus", upload.none(), async (req, res) => {
   const { orderId, order_status } = req.body;
   try {
     const invoice = await Invoice.findOne({ order_id: orderId });
     if (!invoice) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ message: "Order not found" });
     }
 
     invoice.order_status = order_status;
@@ -504,9 +585,9 @@ app.post('/api/orderStatus', upload.none(), async (req, res) => {
     const user = await User.findById(invoice.cx_id);
 
     if (user) {
-      const userOrder = user.user_order.find(order => order.id === orderId);
+      const userOrder = user.user_order.find((order) => order.id === orderId);
       if (!userOrder) {
-        return res.status(404).json({ message: 'User order not found' });
+        return res.status(404).json({ message: "User order not found" });
       }
 
       userOrder.status = order_status;
@@ -514,15 +595,13 @@ app.post('/api/orderStatus', upload.none(), async (req, res) => {
 
       res.status(201).send({ success: true, data: { invoice, user } });
     }
-
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-
-app.post('/api/login', async (req, res) => {
+app.post("/api/login", async (req, res) => {
   try {
     const { phone_number, password } = req.body;
     console.log("BODY", req.body);
@@ -530,21 +609,18 @@ app.post('/api/login', async (req, res) => {
     const admin = await Admin.findOne({ phone_number: phone_number });
     console.log(admin);
     if (password == admin.password) {
-      res.status(200).json({ success: true, message: 'Login successful' });
-
+      res.status(200).json({ success: true, message: "Login successful" });
     } else {
       res.status(400).json({ success: false, error: error.message });
     }
-
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }
 });
 
-
 // <<<<<<::::::Add Agent::::::>>>>>>
 
-app.post('/api/addAgent', async (req, res) => {
+app.post("/api/addAgent", async (req, res) => {
   const { agentName, agent_id } = req.body;
   console.log(req.body);
 
@@ -553,15 +629,17 @@ app.post('/api/addAgent', async (req, res) => {
     if (existingAgent) {
       res.status(406).json("Agent Already Exist:::");
     } else {
-      const { customAlphabet } = await import('nanoid');
-      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_';
+      const { customAlphabet } = await import("nanoid");
+      const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
       const nanoid = customAlphabet(alphabet, 3);
       const referralCode = `${agentName}#${nanoid()}`;
       const newAgent = new Agent({
-        agentName, agent_id, referralCode
+        agentName,
+        agent_id,
+        referralCode,
       });
       await newAgent.save();
-      res.status(201).json(newAgent)
+      res.status(201).json(newAgent);
     }
   } catch (err) {
     console.log("Error at catch in addAgent::::::", err);
@@ -569,24 +647,23 @@ app.post('/api/addAgent', async (req, res) => {
   }
 });
 
-
 // <<<<::::Displaying All Agent Details By Using Populate()::::>>>>
 
-app.get('/api/getAllAgentDetails', async (req, res) => {
+app.get("/api/getAllAgentDetails", async (req, res) => {
   try {
-    const agentDetails = await Agent.find().populate('accountsCreated')
+    const agentDetails = await Agent.find().populate("accountsCreated");
     if (!agentDetails) {
       return res.status(404).json("Details Not Found...!");
     } else {
-      const response = agentDetails.map(agent => {
+      const response = agentDetails.map((agent) => {
         const totalOrderValue = agent.accountsCreated
-          .flatMap((user => user.user_order))
-          .filter(order => order.status === "Delivered")
+          .flatMap((user) => user.user_order)
+          .filter((order) => order.status === "Delivered")
           .reduce((total, order) => total + order.orderValue, 0);
 
         const totalSales = agent.accountsCreated
-          .flatMap(sales => sales.user_order)
-          .filter(order => order.status === "Delivered").length;
+          .flatMap((sales) => sales.user_order)
+          .filter((order) => order.status === "Delivered").length;
 
         return {
           agentName: agent.agentName,
@@ -595,25 +672,23 @@ app.get('/api/getAllAgentDetails', async (req, res) => {
           userCount: agent.accountsCreated.length,
           totalOrderValue: totalOrderValue,
           totalSales: totalSales,
-          //The below line of code contain all the details of user,order,agent,userCart..etc  
-          accountsCreated: agent.accountsCreated
+          //The below line of code contain all the details of user,order,agent,userCart..etc
+          accountsCreated: agent.accountsCreated,
         };
       });
 
-      res.status(200).json(response)
+      res.status(200).json(response);
     }
   } catch (err) {
     console.log("Error at catch in getAgentDetails::::::", err);
     res.status(500).json({ error: "Internal server error" });
   }
-})
-
+});
 
 app.listen(port, (error) => {
   if (!error) {
     console.log("Server running on port" + port);
-  }
-  else {
+  } else {
     console.log("Error : " + error);
   }
-})
+});
