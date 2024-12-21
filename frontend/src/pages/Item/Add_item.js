@@ -192,7 +192,7 @@ const ItemAdd = () => {
           const existingTags = response.data.map((item) => item.tags);
           if (!existingTags.includes(tags)) {
             await axios
-              .post("/addTag", { tags })
+              .post(`${process.env.REACT_APP_API_URL}/addTag`, { tags })
               .then((res) => {
                 swal({
                   title: "Tag added successfully...",

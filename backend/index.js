@@ -647,6 +647,23 @@ app.post("/api/addAgent", async (req, res) => {
   }
 });
 
+// <<<<<<::::::Delete Agent::::::>>>>>>
+app.delete("/api/deleteAgent", async (req, res) => {
+  try {
+    const { agentId, adminPassword } = req.body;
+
+    if (adminPassword != "12345") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const deleteRespose = await Agent.findOneAndDelete({ agent_id: agentId });
+    res.status(200).json({ message: "succefully deleted", deleteRespose });
+  } catch (error) {
+    console.log("Error at catch in delete Agent::::::", error);
+    res.status(500).json({ message: "server error", error });
+  }
+});
+
 // <<<<::::Displaying All Agent Details By Using Populate()::::>>>>
 
 app.get("/api/getAllAgentDetails", async (req, res) => {
