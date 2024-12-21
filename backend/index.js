@@ -652,7 +652,7 @@ app.delete("/api/deleteAgent", async (req, res) => {
   try {
     const { agentId, adminPassword } = req.body;
 
-    if (adminPassword != "Anadham@1234$$") {
+    if (adminPassword != "Anandham@1234$$") {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
