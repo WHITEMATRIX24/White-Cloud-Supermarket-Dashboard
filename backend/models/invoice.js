@@ -16,13 +16,14 @@ const ItemSchema = new mongoose.Schema({
   item_discription: String,
   created_at: Date,
   updated_at: Date,
+  count: Number,
 });
 
 
 const invoiceSchema = new mongoose.Schema({
   cx_id: String,
   cx_address: String,
-  order_status : String,
+  order_status: String,
   cx_phone_number: Number,
   cx_name: String,
   oba: Number,
@@ -30,6 +31,7 @@ const invoiceSchema = new mongoose.Schema({
   order_id: String,
   order_date: Date,
   order_status: String,
+  edited_tag: String,
   item_details: [ItemSchema,]
 });
 

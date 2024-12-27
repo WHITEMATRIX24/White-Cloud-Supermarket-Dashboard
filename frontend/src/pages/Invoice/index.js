@@ -5,7 +5,7 @@ import { jsPDF } from "jspdf";
 import autoTable from 'jspdf-autotable'
 import { RenderButton } from '../../component/Button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPrint } from '@fortawesome/fontawesome-free-solid';
+import { faEdit, faPrint, faTrash } from '@fortawesome/fontawesome-free-solid';
 import moment from 'moment';
 import { change_status, retrieve_orders } from '../../redux/actions/orders.action';
 import { useNavigate } from 'react-router-dom';
@@ -21,7 +21,12 @@ const Invoice = () => {
     const [packedOrdersCount, setPackedOrders] = useState('');
     const [deliveryOrdersCount, setDeliveryOrders] = useState('');
     const [deliveredOrdersCount, setDeliveredOrders] = useState('');
-
+    const [editMode, setEditMode] = useState(false);
+    const [modifiedOrder, setModifiedOrder] = useState({
+        item_details: [],
+    });
+    const [calcoba, setCalcOba] = useState('');
+    const [originalOrder, setOriginalOrder] = useState(null);
     const navigate = useNavigate()
     const dispatch = useDispatch();
     const ref = useRef();
@@ -32,7 +37,7 @@ const Invoice = () => {
     }, []);
 
     const __fetchOrders = () => {
-       
+
         try {
             dispatch(
                 retrieve_orders()
@@ -49,7 +54,7 @@ const Invoice = () => {
                 const displayedOrders = response.data.filter(order => {
                     const orderDate = new Date(order.order_date);
                     return order.order_status === 'Delivered' && orderDate >= oneDayAgo;
-                  });
+                });
                 const deliveredOrders = displayedOrders.length;
                 setDeliveredOrders(deliveredOrders);
             }).catch((error) => {
@@ -60,7 +65,7 @@ const Invoice = () => {
         }
     }
 
-    
+
     const handleClick_All = () => {
         try {
             dispatch(
@@ -90,7 +95,7 @@ const Invoice = () => {
         }
     };
 
-    
+
     const handleClick_Packed = () => {
         try {
             dispatch(
@@ -131,7 +136,7 @@ const Invoice = () => {
                 const displayedOrders = response.data.filter(order => {
                     const orderDate = new Date(order.order_date);
                     return order.order_status === 'Delivered' && orderDate >= oneDayAgo;
-                  });
+                });
                 setOrders(displayedOrders)
             }).catch((error) => {
                 console.log('error : ', error);
@@ -176,115 +181,133 @@ const Invoice = () => {
             behavior: "smooth"
         })
         setSelectOrder(order);
+        setCalcOba(order.oba);
     }
+    useEffect(() => {
+        console.log("selectOrder:", selectOrder); // Inspect selectOrder
+        if (selectOrder) {
+            setModifiedOrder(selectOrder);
+        }
+    }, [selectOrder]);
+    useEffect(() => {
+        console.log("modifiedOrder:", modifiedOrder); // Inspect modifiedOrder
+    }, [modifiedOrder]);
 
     const __clickStockReportPDF = (e) => {
+        let body = [];
+        selectOrder.item_details.map((data) => {
+            body.push([
+                data.item_code,
+                data.item_name,
+                data.item_mrp,
+                data.discount,
+                data.offer_price
+            ]);
+        });
 
-        let body =  []
-        selectOrder.item_details.map(data => {
-            return (
-                body.push([
-                    data.item_code,
-                    data.item_name, 
-                    data.item_mrp, 
-                    data.discount,
-                    data.offer_price
-                ])
-            )
-        })
-       
         const doc = new jsPDF();
-         autoTable(doc, {
+        autoTable(doc, {
             body: [
-              [
-                {
-                  content: 'WHITE'
-                  +'\n'
-                  +"Cloud_Supermarket",
-                  styles: {
-                    halign: 'center',
-                    fontSize: 20,
-                    textColor: '#000',
-                  }
-                }
-              ],
+                [
+                    {
+                        content: 'WHITE' + '\n' + "Cloud_Supermarket",
+                        styles: {
+                            halign: 'center',
+                            fontSize: 20,
+                            textColor: '#000',
+                        },
+                    },
+                ],
             ],
-            theme: 'plain'
-          });
+            theme: 'plain',
+        });
 
-          autoTable(doc, {
+        autoTable(doc, {
             body: [
-              [
-                {
-                  content: 'Order' + ' '+"Estimate",
-                  styles: {
-                    halign: 'center',
-                    fontSize: 20,
-                    textColor: '#000'
-                  }
-                }
-              ],
+                [
+                    {
+                        content: 'Order' + ' ' + "Estimate",
+                        styles: {
+                            halign: 'center',
+                            fontSize: 20,
+                            textColor: '#000',
+                        },
+                    },
+                ],
             ],
-            theme: 'plain'
-          });
+            theme: 'plain',
+        });
 
-          autoTable(doc, {
+        autoTable(doc, {
             body: [
-              [
-                {
-                  content: selectOrder?.cx_name
-                  +'\n'
-                  + selectOrder?.cx_phone_number,
-                  styles: {
-                    halign: 'left'
-                  }
-                },
-                
-                {
-                  content: selectOrder?.order_id
-                  +'\n'
-                  +moment(selectOrder?.order_date).format("MMMM D, YYYY"),
-                  styles: {
-                    halign: 'right'
-                  }
-                }
-              ],
+                [
+                    {
+                        content: selectOrder?.cx_name + '\n' + selectOrder?.cx_phone_number,
+                        styles: {
+                            halign: 'left',
+                        },
+                    },
+                    {
+                        content: selectOrder?.order_id + '\n' + moment(selectOrder?.order_date).format("MMMM D, YYYY"),
+                        styles: {
+                            halign: 'right',
+                        },
+                    },
+                ],
             ],
-          })
+        });
 
-         autoTable(doc, {
-            head: [['Item Code', 'Item Name', 'Item Price','Discount', 'Amount']],
-            body:body,
+        autoTable(doc, {
+            head: [['Item Code', 'Item Name', 'Item Price', 'Discount', 'Amount']],
+            body: body,
             theme: 'grid',
-            headStyles:{
-              fillColor: '#343a40'
-            }
-          });
+            headStyles: {
+                fillColor: '#343a40',
+            },
+        });
 
-          autoTable(doc, {
+        autoTable(doc, {
             body: [
-              [
-                {
-                  content: 'Total :'+ + selectOrder?.oba,
-                  styles: {
-                    halign: 'right',
-                    fontSize: 14
-                  }
-                }
-              ],
+                [
+                    {
+                        content: 'Total :' + +selectOrder?.oba,
+                        styles: {
+                            halign: 'right',
+                            fontSize: 14,
+                        },
+                    },
+                ],
             ],
-          });
-          
-        doc.autoPrint({variant: 'non-conform'});  
-        doc.save('Order-details.pdf')
+        });
+
+        // Only add the Note if the edited_tag is not empty
+        if (selectOrder?.edited_tag && selectOrder?.edited_tag.trim() !== '') {
+            autoTable(doc, {
+                body: [
+                    [
+                        {
+                            content: 'Note :' + (isNaN(selectOrder?.edited_tag) ? selectOrder?.edited_tag : Number(selectOrder?.edited_tag)),
+                            styles: {
+                                halign: 'right',
+                                fontSize: 14,
+                            },
+                        },
+                    ],
+                ],
+            });
+        }
+
+        doc.autoPrint({ variant: 'non-conform' });
+        doc.save('Order-details.pdf');
     };
 
-    
-    const handleChange = (e) =>{
+
+
+    const handleChange = (e) => {
 
         const formData = new FormData()
-        formData.append('orderId',selectOrder.order_id)
-        formData.append('order_status',e.target.value)
+        formData.append('orderId', selectOrder.order_id)
+        formData.append('order_status', e.target.value)
 
         try {
             dispatch(change_status(formData)
@@ -305,11 +328,162 @@ const Invoice = () => {
         try {
             window.open(`https://wa.me/+91${selectOrder.cx_phone_number}?text=${encodeURIComponent(" ")}`);
         } catch (err) {
-          console.error(err);
+            console.error(err);
         }
-      };
+    };
+    const handleInputChange = (e, index, field) => {
+        const { value } = e.target;
+        if (!Array.isArray(modifiedOrder.item_details)) {
+            console.error("item_details is not an array or is undefined");
+            return;
+        }
+
+        const updatedItems = [...modifiedOrder.item_details];
+
+        if (index < 0 || index >= updatedItems.length) {
+            console.error(`Invalid index: ${index}`);
+            return;
+        }
+
+        updatedItems[index] = { ...updatedItems[index], [field]: value }; // Safely update field
+
+        const newOba = updatedItems.reduce((total, item) => {
+            const amount = (item.offer_price || 0) * (item.count || 1);
+            return total + amount;
+        }, 0);
+        setCalcOba(newOba);
+        setModifiedOrder({
+            ...modifiedOrder,
+            item_details: updatedItems,
+            oba: newOba,
+        });
+    };
+
+    const handleEdit = () => {
+        setOriginalOrder({ ...modifiedOrder });
+        console.log("original order", originalOrder);
+        setEditMode(true);
+    };
+    const handleCancel = () => {
+        if (originalOrder) {
+            setModifiedOrder(originalOrder);
+            setCalcOba(originalOrder.oba); // Revert to original data
+        }
+        setEditMode(false); // Exit edit mode
+    };
+    const handleSave = async () => {
+        try {
+            const isPriceOrCountChanged = modifiedOrder.item_details.some((item, index) => {
+                const originalItem = selectOrder.item_details[index];
+                return (
+                    item.offer_price !== originalItem.offer_price ||
+                    item.count !== originalItem.count
+                );
+            });
+
+            const updatedOrder = {
+                ...modifiedOrder,
+                edited_tag: isPriceOrCountChanged ? "The price is calculated according to weight" : modifiedOrder.edited_tag,
+                oba: calcoba, // Update 'oba' with the newly calculated total
+            };
+            console.log("save", updatedOrder)
+
+            // Save to the database
+            await axios.put(`${process.env.REACT_APP_API_URL}/editorders/${updatedOrder._id}`, updatedOrder);
+
+            // Update the selected order
+            setSelectOrder(updatedOrder);
+            setEditMode(false);
+        } catch (error) {
+            console.error("Error saving order:", error);
+            alert("Failed to save order details. Please try again.");
+        }
+    };
+    const handleDeleteItem = (index) => {
+        // Remove the item from the list
+        const updatedItems = modifiedOrder.item_details.filter((_, idx) => idx !== index);
+
+        // Calculate the new 'oba' value after deleting the item
+        const newOba = updatedItems.reduce((total, item) => {
+            const amount = (item.offer_price || 0) * (item.count || 1);
+            return total + amount;
+        }, 0);
+
+        // Update the state with the new 'oba' and modified items
+        setCalcOba(newOba);
+        setModifiedOrder((prevState) => ({
+            ...prevState,
+            item_details: updatedItems,
+            oba: newOba, // Update 'oba' in the state
+        }));
+
+        console.log("Deleted item, updated items:", updatedItems);
+
+        // Send the updated order (with new 'oba') to the backend
+        updateOrderInDatabase({
+            ...modifiedOrder, // Retain the original order properties
+            item_details: updatedItems,
+            oba: newOba, // Ensure the updated 'oba' is sent
+        });
+    };
+
+    const updateOrderInDatabase = async (updatedItems) => {
+        try {
+            const response = await axios.put(`${process.env.REACT_APP_API_URL}/editorders/${updatedItems._id}`, {
+                item_details: updatedItems, // Make sure you're sending the correct structure
+            });
+
+            if (response.data.success) {
+                console.log("Order updated successfully");
+            } else {
+                console.error("Failed to update the order");
+            }
+        } catch (error) {
+            console.error("Error updating order:", error);
+        }
+    };
 
 
+
+    // const __renderOrderDetails = () => (
+    //     <div className='order-details'>
+    //         <h3>Order Details</h3>
+    //         {editMode ? (
+    //             <div>
+    //                 {selectOrder.item_details.map((item, index) => (
+    //                     <div key={index} className='edit-item'>
+    //                         <input
+    //                             type='text'
+    //                             value={item.item_name}
+    //                             readOnly
+    //                         />
+    //                         <input
+    //                             type='number'
+    //                             value={item.quantity}
+    //                             onChange={(e) => handleEditItem(index, 'quantity', parseInt(e.target.value))}
+    //                         />
+    //                         <input
+    //                             type='number'
+    //                             value={item.discount}
+    //                             onChange={(e) => handleEditItem(index, 'discount', parseFloat(e.target.value))}
+    //                         />
+    //                     </div>
+    //                 ))}
+    //                 <button onClick={handleSaveEdit}>Save</button>
+    //             </div>
+    //         ) : (
+    //             <div>
+    //                 {selectOrder.item_details.map((item, index) => (
+    //                     <div key={index}>
+    //                         <p>{item.item_name} - Quantity: {item.quantity} - Discount: {item.discount}</p>
+    //                     </div>
+    //                 ))}
+    //             </div>
+    //         )}
+    //         <p>Total Amount: {selectOrder.oba}/-</p>
+    //         <button onClick={() => setEditMode(!editMode)}>{editMode ? 'Cancel' : 'Edit'}</button>
+    //     </div>
+    // );
 
     return (
         <React.Fragment>
@@ -326,29 +500,29 @@ const Invoice = () => {
                                             </h1>
                                         </Col>
                                     </Row>
-                                    
+
                                     <div class="d-flex justify-content-around border-primary">
-                                    <button type="button" class="btn btn-light" onClick={handleClick_All}>&nbsp;&nbsp;All Orders &nbsp;&nbsp;</button>
-                                    <button type="button" class="btn btn-light" onClick={handleClick_Accepted}>Accepted<span class="badge badge-light align-middle"><p class="display-6 text-danger" style={{fontWeight: 'bold'}}><strong>&nbsp;&nbsp;{acceptedOrdersCount}</strong></p></span></button>                                                                        
-                                    <button type="button" class="btn btn-light" onClick={handleClick_Packed}>Packed<span class="badge badge-light align-middle"><p class="display-6 text-danger"  style={{fontWeight: 'bold'}}><strong>&nbsp;{packedOrdersCount}</strong></p></span></button>
-                                    <button type="button" class="btn btn-light" onClick={handleClick_Delivery}>Out for Delivery<span class="badge badge-light align-middle"><p class="display-6 text-danger"  style={{fontWeight: 'bold'}}><strong>&nbsp;{deliveryOrdersCount}</strong></p></span></button>
-                                    <button type="button" class="btn btn-light" onClick={handleClick_Delivered}>Delivered Today<span class="badge badge-light align-middle"><p class="display-6 text-success"  style={{fontWeight: 'bold'}}><strong>&nbsp;{deliveredOrdersCount}</strong></p></span></button>
+                                        <button type="button" class="btn btn-light" onClick={handleClick_All}>&nbsp;&nbsp;All Orders &nbsp;&nbsp;</button>
+                                        <button type="button" class="btn btn-light" onClick={handleClick_Accepted}>Accepted<span class="badge badge-light align-middle"><p class="display-6 text-danger" style={{ fontWeight: 'bold' }}><strong>&nbsp;&nbsp;{acceptedOrdersCount}</strong></p></span></button>
+                                        <button type="button" class="btn btn-light" onClick={handleClick_Packed}>Packed<span class="badge badge-light align-middle"><p class="display-6 text-danger" style={{ fontWeight: 'bold' }}><strong>&nbsp;{packedOrdersCount}</strong></p></span></button>
+                                        <button type="button" class="btn btn-light" onClick={handleClick_Delivery}>Out for Delivery<span class="badge badge-light align-middle"><p class="display-6 text-danger" style={{ fontWeight: 'bold' }}><strong>&nbsp;{deliveryOrdersCount}</strong></p></span></button>
+                                        <button type="button" class="btn btn-light" onClick={handleClick_Delivered}>Delivered Today<span class="badge badge-light align-middle"><p class="display-6 text-success" style={{ fontWeight: 'bold' }}><strong>&nbsp;{deliveredOrdersCount}</strong></p></span></button>
                                     </div>
-                                    <br/>
+                                    <br />
                                     {
                                         orders.length > 0 ? (
                                             <Row>
-                                                 <Col md={5}>
+                                                <Col md={5}>
                                                     <div className='orders-list'>
                                                         {orders.map((order, key) => {
-                                                                return (__renderOrderSection(order, key)
-                                                                )
-                                                            })
+                                                            return (__renderOrderSection(order, key)
+                                                            )
+                                                        })
                                                         }
                                                     </div>
                                                 </Col>
                                                 {
-                                                    selectOrder.order_id? (<>
+                                                    selectOrder.order_id ? (<>
                                                         <Col md={7}>
                                                             <Row>
                                                                 <Col md={12} className='d-flex justify-content-between'>
@@ -359,9 +533,10 @@ const Invoice = () => {
                                                                     </div>
                                                                     <div>
                                                                         <label className='fw-semibold mb-2'>Change order status</label>
-                                                                        <Col md={{span:10}}>
+                                                                        <Col md={{ span: 16 }}>
                                                                             <select className='form-control text-center' onChange={handleChange} >
                                                                                 <option value="" disabled="disabled">order status</option>
+                                                                                <option value="">Current: {selectOrder?.order_status}</option>
                                                                                 <option value="Accepted">Accepted</option>
                                                                                 <option value="Packed">Packed </option>
                                                                                 <option value="Delivery">Delivery </option>
@@ -370,210 +545,192 @@ const Invoice = () => {
                                                                             {/* <button className='btn btn-ouline-white' onClick={(e) => submit(e)}>Go</button> */}
                                                                         </Col>
                                                                     </div>
-                                                                </Col> 
+                                                                </Col>
                                                                 <Col md={12} className="my-5">
-                                                                   <div className='order border border-2 p-3'>
-                                                                         <div className='text-center text-white'>
+                                                                    <div className='order border border-2 p-3'>
+                                                                        <div className='text-center text-white'>
                                                                             <h3><strong>WHITE</strong></h3>
                                                                             <h2>Cloud_Supermarket</h2>
-                                                                         </div>
-                                                                         <div className='d-flex justify-content-between align-items-center'>
-                                                                             <div className='text-start'>
-                                                                                 <p className='m-0 fw-semibold'>{selectOrder?.cx_name}</p>
-                                                                                 <p className='m-0 fw-semibold'>{selectOrder?.cx_phone_number}</p>
-                                                                             </div>
-                                                                             <div className='text-end'>
-                                                                                 <p className='m-0 fw-semibold'>{selectOrder?.order_id}</p>
-                                                                                 <p className='m-0 fw-semibold'>{moment(selectOrder?.order_date).format("MMMM D, YYYY")}</p>
-                                                                             </div>
-                                                                         </div> 
-
-                                                                         <hr />
-                                                                         <div className='m-3'>
-                                                                             <table className='table'>
-                                                                                 <thead>
-                                                                                 <tr className='text-center'>    
-                                                                                         <th>Item Code</th>
-                                                                                         <th>Item Name</th>
-                                                                                         <th>Item MRP</th>
-                                                                                         <th>Discount</th>
-                                                                                         <th>Amount</th>
-                                                                                         <th>Count</th>
-                                                                                     </tr>
-                                                                                 </thead>
-                                                                                <tbody>
-                                                                                    {selectOrder.item_details.map(item =>{
-                                                                                        return (
-                                                                                                <>
-                                                                                                <tr className='text-center'>
-                                                                                                    <td>{item.item_code}</td>
-                                                                                                    <td>{item.item_name}</td>
-                                                                                                    <td>{item.item_mrp}/-</td>
-                                                                                                    <td>{item.discount}</td>
-                                                                                                    <td>{(item.offer_price)}/-</td>
-                                                                                                    <td>{(item.count ? item.count : 1)}</td>
-                                                                                                </tr>
-                                                                                                </>
-                                                                                            )
-                                                                                        })
-                                                                                    }
-                                                                                 </tbody> 
-                                                                                </table>
-                                                                                {orders.map((order) => {
-                                                                                     return (
-                                                                                         <>
-                                                                                             {
-                                                                                                 (selectOrder?.order_id === order.order_id) && 
-                                                                                                     <div className='text-end'>
-                                                                                                         <p className='m-0'><b>SubTotal :{order.oba}/-</b></p>
-                                                                                                     </div>
-                                                                                             }
-                                                                                         </>
-                                                                                         )
-                                                                                 })
-                                                                             }
-                                                                            </div>
+                                                                        </div>
+                                                                        <div className='d-flex justify-content-between align-items-center'>
                                                                             <div className='text-start'>
-                                                                             <div className='d-flex justify-content-end'>
-                                                                                <Row className='text-end'>
-                                                                                     <Col>
-                                                                                     <OverlayTrigger placement="bottom" overlay={<Tooltip id="Print">Banner</Tooltip>}>
-                                                                                         <RenderButton
-                                                                                             variant={"primary"}
-                                                                                             type={"button"}
-                                                                                             title={<FontAwesomeIcon icon={faPrint}/>}
-                                                                                             onClick={__clickStockReportPDF}   
-                                                                                             />
-                                                                                     </OverlayTrigger>
-                                                                                     </Col>
-                                                                                     <Col>
-                                                                                     <OverlayTrigger placement="bottom" overlay={<Tooltip id="Whatsapp">Send to Whatsapp</Tooltip>}>
-                                                                                     
-                                                                                        <RenderButton
-                                                                                            variant={"primary"}
-                                                                                            type={"button"}
-                                                                                            title={<FontAwesomeIcon icon={faWhatsapp}/>}
-                                                                                            onClick={__clickSendToWhatsapp}
-                                                                                            //onClick={window.open(`https://wa.me/+91${selectOrder.cx_phone_number}`)}
-                                                                                        />
-                                                                                    
-                                                                                      </OverlayTrigger>
-                                                                                     </Col>
-                                                                                 </Row>
-                                                                               </div>
+                                                                                <p className='m-0 fw-semibold'>{selectOrder?.cx_name}</p>
+                                                                                <p className='m-0 fw-semibold'>{selectOrder?.cx_phone_number}</p>
+                                                                            </div>
+                                                                            <div className='text-end'>
+                                                                                <p className='m-0 fw-semibold'>{selectOrder?.order_id}</p>
+                                                                                <p className='m-0 fw-semibold'>{moment(selectOrder?.order_date).format("MMMM D, YYYY")}</p>
                                                                             </div>
                                                                         </div>
-                                                                    </Col>
+
+                                                                        <hr />
+                                                                        <div className='m-3'>
+                                                                            <table className='table'>
+                                                                                <thead>
+                                                                                    <tr className='text-center'>
+                                                                                        <th>Item Code</th>
+                                                                                        <th>Item Name</th>
+                                                                                        <th>Item MRP</th>
+                                                                                        <th>Discount</th>
+                                                                                        <th>Amount</th>
+                                                                                        <th>Count</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody>
+                                                                                    {(modifiedOrder?.item_details || []).map((item, index) => (
+                                                                                        <tr key={item.item_code || index}>
+                                                                                            <td>{item.item_code}</td>
+                                                                                            <td>{item.item_name}</td>
+                                                                                            <td>{item.item_mrp}/-</td>
+                                                                                            <td>{item.discount}%</td>
+                                                                                            <td>
+                                                                                                {editMode ? (
+                                                                                                    <input
+                                                                                                        type="number"
+                                                                                                        value={item.offer_price}
+                                                                                                        className="form-control w-100"
+                                                                                                        onChange={(e) => handleInputChange(e, index, "offer_price")}
+                                                                                                    />
+                                                                                                ) : (
+                                                                                                    `${item.offer_price}/-`
+                                                                                                )}
+                                                                                            </td>
+                                                                                            <td>
+                                                                                                {editMode ? (
+                                                                                                    <input
+                                                                                                        type="number"
+                                                                                                        value={item.count}
+                                                                                                        className="form-control w-100"
+                                                                                                        onChange={(e) => handleInputChange(e, index, "count")}
+                                                                                                    />
+                                                                                                ) : (
+                                                                                                    item.count
+                                                                                                )}
+                                                                                            </td>
+                                                                                            <td>
+                                                                                                {editMode ? (
+                                                                                                    <FontAwesomeIcon
+                                                                                                        icon={faTrash}
+                                                                                                        cursor="pointer"
+                                                                                                        onClick={() => handleDeleteItem(index)}
+                                                                                                    />
+                                                                                                ) : (
+                                                                                                    ""
+                                                                                                )}
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    ))}
+                                                                                </tbody>
+
+
+                                                                            </table>
+                                                                            {orders.map((order) => {
+                                                                                return (
+                                                                                    <>
+                                                                                        {
+                                                                                            (selectOrder?.order_id === order.order_id) &&
+                                                                                            <div className='text-end'>
+                                                                                                <p className='m-0'><b>SubTotal :{calcoba}/-</b></p>
+                                                                                                <p>{order.edited_tag}</p>
+                                                                                            </div>
+
+                                                                                        }
+                                                                                    </>
+                                                                                )
+                                                                            })
+                                                                            }
+                                                                        </div>
+                                                                        <div className='text-start'>
+                                                                            <div className='d-flex justify-content-end'>
+                                                                                <Row className="text-end">
+                                                                                    {editMode ? (
+                                                                                        // Buttons to appear in editing mode
+                                                                                        <>
+                                                                                            <Col>
+                                                                                                <OverlayTrigger placement="bottom" overlay={<Tooltip id="Save">Save</Tooltip>}>
+                                                                                                    <RenderButton
+                                                                                                        variant="primary"
+                                                                                                        type="button"
+                                                                                                        title="Save"
+                                                                                                        onClick={handleSave}
+                                                                                                    />
+                                                                                                </OverlayTrigger>
+                                                                                            </Col>
+                                                                                            <Col>
+                                                                                                <OverlayTrigger placement="bottom" overlay={<Tooltip id="Cancel">Cancel</Tooltip>}>
+                                                                                                    <RenderButton
+                                                                                                        variant="secondary"
+                                                                                                        type="button"
+                                                                                                        title="Cancel"
+                                                                                                        onClick={handleCancel}
+                                                                                                    />
+                                                                                                </OverlayTrigger>
+                                                                                            </Col>
+                                                                                        </>
+                                                                                    ) : (
+                                                                                        // Buttons to appear when not in editing mode
+                                                                                        <>
+                                                                                            <Col>
+                                                                                                <OverlayTrigger placement="bottom" overlay={<Tooltip id="Edit">Edit</Tooltip>}>
+                                                                                                    <RenderButton
+                                                                                                        variant="primary"
+                                                                                                        type="button"
+                                                                                                        title={<FontAwesomeIcon icon={faEdit} />}
+                                                                                                        onClick={handleEdit}
+                                                                                                    />
+                                                                                                </OverlayTrigger>
+                                                                                            </Col>
+                                                                                            <Col>
+                                                                                                <OverlayTrigger placement="bottom" overlay={<Tooltip id="Print">Print</Tooltip>}>
+                                                                                                    <RenderButton
+                                                                                                        variant="primary"
+                                                                                                        type="button"
+                                                                                                        title={<FontAwesomeIcon icon={faPrint} />}
+                                                                                                        onClick={__clickStockReportPDF}
+                                                                                                    />
+                                                                                                </OverlayTrigger>
+                                                                                            </Col>
+                                                                                            <Col>
+                                                                                                <OverlayTrigger placement="bottom" overlay={<Tooltip id="Whatsapp">Send to WhatsApp</Tooltip>}>
+                                                                                                    <RenderButton
+                                                                                                        variant="primary"
+                                                                                                        type="button"
+                                                                                                        title={<FontAwesomeIcon icon={faWhatsapp} />}
+                                                                                                        onClick={__clickSendToWhatsapp}
+                                                                                                    />
+                                                                                                </OverlayTrigger>
+                                                                                            </Col>
+                                                                                        </>
+                                                                                    )}
+                                                                                </Row>
+
+                                                                            </div>
+                                                                        </div>
+
+                                                                    </div>
+                                                                </Col>
                                                             </Row>
                                                         </Col>
                                                     </>
 
-                                                        
-                                                        // selectOrder?.id ? (
-                                                            //     <Col md={7}>
-                                                            //         <Row>
-                                                            //             <Col md={12}>
-                                                            //                 <h3 className='text-white'>
-                                                            //                     Invoice Detail
-                                                    //                 </h3>
-                                                    //             </Col>
-                                                    //             <Col md={12} className="my-5">
-                                                    //                 <div className='order border border-2 p-3'>
-                                                    //                     <div className='text-center text-white'>
-                                                    //                         <h3>Company Name</h3>
-                                                    //                     </div>
-                                                    //                     <div className='d-flex justify-content-between align-items-center'>
-                                                    //                         <div className='text-start'>
-                                                    //                             <p className='m-0 fw-semibold'>{selectOrder?.cx_name}</p>
-                                                    //                             <p className='m-0 fw-semibold'>{selectOrder?.cx_phone_number}</p>
-                                                    //                         </div>
-                                                    //                         <div className='text-end'>
-                                                    //                             <p className='m-0 fw-semibold'>{selectOrder?.id}</p>
-                                                    //                             <p className='m-0 fw-semibold'>{moment(selectOrder?.date).format("MMMM D, YYYY")}</p>
-                                                    //                         </div>
-                                                    //                     </div>
-                                                    //                         <hr />
-                                                    //                     <div className='m-3'>
-                                                    //                         <table className='table'>
-                                                    //                             <thead>
-                                                    //                                 <tr className='text-center'>    
-                                                    //                                     <th>Item Code</th>
-                                                    //                                     <th>Item Name</th>
-                                                    //                                     <th>Item MRP</th>
-                                                    //                                     <th>Discount</th>
-                                                    //                                     <th>Amount</th>
-                                                    //                                 </tr>
-                                                    //                             </thead>
-                                                    //                             <tbody>
-                                                    //                                 {selectOrder.stock_id.map(item =>{
-                                                    //                                         return (
-                                                    //                                             <>
-                                                    //                                             <tr className='text-center'>
-                                                    //                                                 <td>{item.item_code}</td>
-                                                    //                                                 <td>{item.item_name}</td>
-                                                    //                                                 <td>{item.item_mrp}/-</td>
-                                                    //                                                 <td>0.0</td>
-                                                    //                                                 <td>{(item.item_mrp)}</td>
-                                                    //                                             </tr>
-                                                    //                                             </>
-                                                    //                                         )
-                                                    //                                     })
-                                                    //                                 }
-                                                    //                             </tbody>
-                                                    //                         </table>
-                                                    //                         {orders.map((order) => {
-                                                    //                                 return (
-                                                    //                                     <>
-                                                    //                                         {
-                                                    //                                             (selectOrder?.id === order.id) && 
-                                                    //                                                 <div className='text-end'>
-                                                    //                                                     <p className='m-0'><b>SubTotal :{order.total_price}/-</b></p>
-                                                    //                                                 </div>
-                                                    //                                         }
-                                                    //                                     </>
-                                                    //                                     )
-                                                    //                             })
-                                                    //                         }
-                                                    //                         </div>
-                                                    //                     <div className='text-start'>
-                                                    //                         <div className='form-group'>
-                                                    //                             <Row className='text-end'>
-                                                    //                                 <Col>
-                                                    //                                 <OverlayTrigger placement="bottom" overlay={<Tooltip id="Print">Banner</Tooltip>}>
-                                                    //                                     <RenderButton
-                                                    //                                         variant={"primary"}
-                                                    //                                         type={"button"}
-                                                    //                                         title={<FontAwesomeIcon icon={faPrint}/>}
-                                                    //                                         onClick={__clickStockReportPDF}
-                                                    //                                         />
-                                                    //                                 </OverlayTrigger>
-                                                    //                                 </Col>
-                                                    //                             </Row>
-                                                    //                         </div>
-                                                    //                     </div>
-                                                    //                 </div>
-                                                    //             </Col>
-                                                    //         </Row>
-                                                    //     </Col>
-                                                        
-                                                    // ) 
+
                                                     )
-                                                    : (<>
-                                                        <Col md={7}>
-                                                            <Row>
-                                                                <Col md={12}>
-                                                                    <h3 className='text-white'>
-                                                                        Order Detail
-                                                                    </h3>
-                                                                </Col>
-                                                            </Row>
-                                                            <div className='m-auto w-50 h-50 d-flex align-items-center justify-content-center'>
-                                                                <label className='text-white fw-semibold mb-0'>
-                                                                    Order not found!!!
-                                                                </label>
-                                                            </div>
-                                                        </Col>
-                                                    </>)
+                                                        : (<>
+                                                            <Col md={7}>
+                                                                <Row>
+                                                                    <Col md={12}>
+                                                                        <h3 className='text-white'>
+                                                                            Order Detail
+                                                                        </h3>
+                                                                    </Col>
+                                                                </Row>
+                                                                <div className='m-auto w-50 h-50 d-flex align-items-center justify-content-center'>
+                                                                    <label className='text-white fw-semibold mb-0'>
+                                                                        Order not found!!!
+                                                                    </label>
+                                                                </div>
+                                                            </Col>
+                                                        </>)
                                                 }
                                             </Row>
                                         ) : (<>

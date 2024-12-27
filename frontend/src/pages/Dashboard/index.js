@@ -10,7 +10,7 @@ export const Dashboard = () => {
 
     const [orders, setOrders] = useState([]);
     const [selectOrder, setSelectOrder] = useState({});
-    const [loading,setLoading] = useState(true)
+    const [loading, setLoading] = useState(true)
 
     const dispatch = useDispatch();
     const ref = useRef();
@@ -35,7 +35,7 @@ export const Dashboard = () => {
             console.log('error : ', error)
         }
     }
-    
+
     const __renderOrderSection = (order, key) => {
         let id = key + 1
         return (
@@ -75,7 +75,7 @@ export const Dashboard = () => {
     const __clickStockReportPDF = (e) => {
 
         let body = [];
-       
+
         body.push([
             selectOrder.name,
             selectOrder.phone_number,
@@ -87,7 +87,7 @@ export const Dashboard = () => {
 
         const doc = new jsPDF();
         autoTable(doc, {
-            head: [['Client Name', 'Client Number', 'Order Date','Order Id','Order Status','Payment Mode']],
+            head: [['Client Name', 'Client Number', 'Order Date', 'Order Id', 'Order Status', 'Payment Mode']],
             body: body,
         })
         doc.save('Order-details.pdf')
@@ -144,18 +144,18 @@ export const Dashboard = () => {
                                                                         <div className='m-3'>
                                                                             <table className='table'>
                                                                                 <thead>
-                                                                                    <tr>    
-                                                                                        <th>Item Code</th>
+                                                                                    <tr>
+                                                                                        {/* <th>Item Code</th>
                                                                                         <th>Item Name</th>
-                                                                                        <th>Item MRP</th>
+                                                                                        <th>Item MRP</th> */}
                                                                                     </tr>
                                                                                 </thead>
                                                                                 <tbody>
-                                                                                    <tr>
+                                                                                    {/* <tr>
                                                                                         <td>1001</td>
                                                                                         <td>XYZ Item</td>
                                                                                         <td>100.00/-</td>
-                                                                                    </tr>
+                                                                                    </tr> */}
                                                                                 </tbody>
                                                                             </table>
                                                                         </div>
