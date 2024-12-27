@@ -123,8 +123,8 @@ app.get("/api/items", async (req, res) => {
 
     const items = await Item.find({})
       .sort({ _id: -1 }) // Sort items in descending order by ID
-      //.skip(skipItems) // Skip the items that come before the current page
-      .limit(42); // Only fetch the items for the current page
+    //.skip(skipItems) // Skip the items that come before the current page
+    // .limit(42); // Only fetch the items for the current page
 
     res.json({
       success: true,
@@ -699,6 +699,31 @@ app.get("/api/getAllAgentDetails", async (req, res) => {
   } catch (err) {
     console.log("Error at catch in getAgentDetails::::::", err);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+app.put("/api/editorders/:id", async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const updatedOrder = req.body;
+
+    console.log("Updated Order:", updatedOrder);
+
+    const result = await Invoice.findOneAndUpdate(
+      { _id: orderId },
+      { $set: updatedOrder },
+      { new: true }
+    );
+
+    if (!result) {
+      console.log("Order not found.");
+      return res.status(404).json({ success: false, message: "Order not found." });
+    }
+
+    console.log("Updated Order Result:", result);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    console.error("Error updating order:", error.message, error.stack);
+    res.status(500).json({ success: false, message: "Failed to update order." });
   }
 });
 
