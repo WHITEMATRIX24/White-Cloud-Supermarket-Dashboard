@@ -1,4 +1,4 @@
-import {createBrowserRouter} from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 import { PublicRoute } from "./publicRoute";
 import { PrivateRoute } from "./privateRoute";
 import AutheticationLayout from "../layout/autheticationLayout";
@@ -16,75 +16,81 @@ import ItemAdd from "../pages/Item/Add_item";
 import AddBanner from "../pages/Banner/AddBanner";
 import AddAgent from "../pages/Agent/AddAgent";
 import AgentDetails from "../pages/Agent/AgentDetails";
+import ShoppingList from "../pages/ShoppingList/ShoppingList";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element:
+    element: (
       <PrivateRoute>
         <Layout />
-      </PrivateRoute>,
+      </PrivateRoute>
+    ),
     children: [
       {
+        path: "/shopping-list",
+        element: <ShoppingList />,
+      },
+      {
         path: "/in-store-billing",
-        element: <InStoreBilling />
+        element: <InStoreBilling />,
       },
       {
         path: "/",
-        element: <Stock />
+        element: <Stock />,
       },
       {
         path: "/add-item",
-        element: <ItemAdd />
+        element: <ItemAdd />,
       },
       {
         path: "/add-item/:id?",
-        element: <Item />
+        element: <Item />,
       },
       {
         path: "/banner",
-        element: <Banner />
+        element: <Banner />,
       },
       {
         path: "/banner/add",
-        element: <AddBanner />
+        element: <AddBanner />,
       },
       {
         path: "/previous-orders",
-        element: <PreviousOrders />
+        element: <PreviousOrders />,
       },
       {
         path: "/orders",
-        element: <Invoice />
+        element: <Invoice />,
       },
       {
         path: "/profile",
-        element: <Profile />
+        element: <Profile />,
       },
       {
         path: "/addagent",
-        element: <AddAgent />
+        element: <AddAgent />,
       },
       {
         path: "/agentdetails",
-        element: <AgentDetails />
-      }
-
-    ]
+        element: <AgentDetails />,
+      },
+    ],
   },
   {
     path: "/",
-    element:
+    element: (
       <PublicRoute>
         <AutheticationLayout />
-      </PublicRoute>,
+      </PublicRoute>
+    ),
     children: [
       {
-        path: '/signin',
-        element: <Signin />
-      }
-    ]
-  }  
+        path: "/signin",
+        element: <Signin />,
+      },
+    ],
+  },
 ]);
 
 export default router;

@@ -20,6 +20,7 @@ const {
 } = require("./utils/s3functionProvider");
 const crypto = require("crypto");
 const { promisify } = require("util");
+const ShoppingListModel = require("./models/shoppingList");
 
 dotenv.config();
 
@@ -121,8 +122,7 @@ app.get("/api/items", async (req, res) => {
     //});
     //}
 
-    const items = await Item.find({})
-      .sort({ _id: -1 }) // Sort items in descending order by ID
+    const items = await Item.find({}).sort({ _id: -1 }); // Sort items in descending order by ID
     //.skip(skipItems) // Skip the items that come before the current page
     // .limit(42); // Only fetch the items for the current page
 
@@ -716,17 +716,51 @@ app.put("/api/editorders/:id", async (req, res) => {
 
     if (!result) {
       console.log("Order not found.");
-      return res.status(404).json({ success: false, message: "Order not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found." });
     }
 
     console.log("Updated Order Result:", result);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     console.error("Error updating order:", error.message, error.stack);
-    res.status(500).json({ success: false, message: "Failed to update order." });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to update order." });
   }
 });
 
+// shopping list routes
+app.get("/api/get-all-shoppinglist-data", async (req, res) => {
+  try {
+    const shoppingListData = await ShoppingListModel.find();
+    res.status(200).json({ message: "success", shoppingListData });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error });
+  }
+});
+
+app.put("/api/update-shoppinglist-data/:shoppingListId", async (req, res) => {
+  try {
+    const { shoppingListId } = req.params;
+
+    const updatedShoppingList = await ShoppingListModel.findByIdAndUpdate(
+      shoppingListId,
+      [
+        {
+          $set: { is_done: { $not: "$is_done" } },
+        },
+      ],
+      { new: true }
+    );
+    res.status(200).json({ message: "success", updatedShoppingList });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error });
+  }
+});
+
+//////////////////////Server listening
 app.listen(port, (error) => {
   if (!error) {
     console.log("Server running on port" + port);
